@@ -1,52 +1,67 @@
 package supportcenter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+/**
+ * Keeps track of active conversations. A customer (contactId) can have at most one
+ * active conversation at a time; each conversation gets a unique id (CONV-001, CONV-002 ...).
+ */
 public class Session {
 
     private final QueueManager queueManager;
     private final Reporter reporter;
-    private final Map<String, Contact.Conversation> activeConversations;
-    private final Map<String, List<String>> conversationHistories = new HashMap<>();
+    private final SimulationClock clock;
+    private final Map<String, Contact.Conversation> activeByContact = new HashMap<>();
+    private int conversationSequence;
 
-    public Session(QueueManager queueManager, Reporter reporter){
+    public Session(QueueManager queueManager, Reporter reporter, SimulationClock clock) {
         this.queueManager = queueManager;
         this.reporter = reporter;
-        this.activeConversations = new HashMap<>();
+        this.clock = clock;
     }
 
-    public void startConversation(Contact.Conversation conversation, String messageContent){
-        activeConversations.put(conversation.getId(), conversation);
-        conversationHistories.put(conversation.getId(), new ArrayList<>());
-        conversationHistories.get(conversation.getId()).add(messageContent);
+    public Session(QueueManager queueManager, Reporter reporter) {
+        this(queueManager, reporter, new SimulationClock());
+    }
+
+    public Contact.Conversation handleIncomingMessage(String contactId, String customerInfo, String content) {
+        Contact.Conversation active = activeByContact.get(contactId);
+        if (active != null) {
+            active.addMessage(content);
+            reporter.reportMessageAppended(active);
+            return active;
+        }
+        Contact.Conversation conversation = new Contact.Conversation(nextConversationId(), contactId, customerInfo);
+        conversation.addMessage(content);
+        conversation.setCreatedAt(clock.now());
+        activeByContact.put(contactId, conversation);
         queueManager.enqueue(conversation);
-        reporter.reportNewConversation(conversation); 
+        reporter.reportNewConversation(conversation);
+        return conversation;
     }
 
-    public void finishConversation(String conversationId){
-        activeConversations.remove(conversationId);
-        conversationHistories.remove(conversationId);
+    public void finishConversation(Contact.Conversation conversation) {
+        conversation.setCompletedAt(clock.now());
+        activeByContact.remove(conversation.getContactId());
     }
 
-    public void transferConversation(String conversationId){
-        Contact.Conversation conversation = activeConversations.get(conversationId);
-        if(conversation != null){
+    public void transferConversation(Contact.Conversation conversation) {
+        if (activeByContact.containsKey(conversation.getContactId())) {
             queueManager.enqueuePriority(conversation);
         }
     }
 
-    public Contact.Conversation getActiveConversation(String conversation){
-        return activeConversations.get(conversation);
+    public Contact.Conversation getActiveConversation(String contactId) {
+        return activeByContact.get(contactId);
     }
 
-    public List<String> getConversationHistory(String conversationId){
-    return conversationHistories.get(conversationId);
+    public int getActiveCount() {
+        return activeByContact.size();
     }
 
-    public int getWaitingCount(){
-        return queueManager.getTotalWaiting();
+    private String nextConversationId() {
+        conversationSequence++;
+        return String.format("CONV-%03d", conversationSequence);
     }
 }

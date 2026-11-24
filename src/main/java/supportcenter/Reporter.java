@@ -54,6 +54,12 @@ public class Reporter {
         puse();
     }
 
+    public void reportMessageAppended(Contact.Conversation conversation){
+        System.out.println("Session: " + conversation.getContactId() + " için açık sohbet var, mesaj "
+            + conversation.getId() + " sohbetine eklendi (" + conversation.getMessages().size() + " mesaj).");
+        puse();
+    }
+
     public void reportFinalSummary(List<Agent> agents){
         System.out.println();
         System.out.println("--- Simülasyon Özeti ---");

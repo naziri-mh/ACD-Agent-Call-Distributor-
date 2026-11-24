@@ -1,8 +1,8 @@
 package supportcenter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 
 public class Contact {
 
@@ -12,24 +12,24 @@ public class Contact {
         this.session = session;
     }
 
+    /**
+     * Routes an incoming message. If the customer already has an active conversation,
+     * the message is added to it; otherwise a new conversation is started.
+     */
     public Conversation receiveMessage(String contactId, String customerInfo, String messageContent){
-        Conversation conversation = new Conversation(contactId, contactId, customerInfo);
-        session.startConversation(conversation, messageContent);
-        return conversation;
+        return session.handleIncomingMessage(contactId, customerInfo, messageContent);
     }
 
-    public static class Conversation{
+    public static class Conversation {
+        private static final long NOT_SET = -1;
+
         private final String id;
         private final String contactId;
         private final String customerInfo;
-        
-        private static final long NOT_SET = -1;
-        private final List<String> message = new ArrayList<>();
+        private final List<String> messages = new ArrayList<>();
         private long createdAt = NOT_SET;
         private long assignedAt = NOT_SET;
         private long completedAt = NOT_SET;
-
-
 
         public Conversation(String id, String contactId, String customerInfo){
             this.id = id;
@@ -49,12 +49,12 @@ public class Contact {
             return customerInfo;
         }
 
-        public void addMesaage(String contact) {
-            message.add(contact);
+        public void addMessage(String content) {
+            messages.add(content);
         }
 
         public List<String> getMessages() {
-            return Collections.unmodifiableList(message);
+            return Collections.unmodifiableList(messages);
         }
 
         public long getCreatedAt() {
@@ -86,5 +86,4 @@ public class Contact {
             return "Conversation{" + id + " contact = " + contactId + "}";
         }
     }
-    
 }

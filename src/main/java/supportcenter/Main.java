@@ -35,6 +35,7 @@ public class Main{
         List<ScenarioStep> scenario = new ArrayList<>();
 
         scenario.add(ScenarioStep.messageArrival("C1", "Ayşe Yılmaz", "Şifremi unuttum"));
+        scenario.add(ScenarioStep.messageArrival("C1", "Ayşe Yılmaz", "Telefon numaram da değişti"));
         scenario.add(ScenarioStep.agentGoesOnline(a1));
         scenario.add(ScenarioStep.messageArrival("C2", "Mehmet Kaya", "Faturamı göremiyorum"));
         scenario.add(ScenarioStep.messageArrival("C3", "Elif Demir", "Hesabım kilitlendi"));

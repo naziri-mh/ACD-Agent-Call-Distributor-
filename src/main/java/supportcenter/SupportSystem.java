@@ -10,26 +10,32 @@ public class SupportSystem {
     private final QueueManager queueManager;
     private final Reporter reporter;
     private final AssignmentStrategy assignmentStrategy;
+    private final SimulationClock clock;
     private final Session session;
     private final Contact contact;
     private long availablitySequence;              // sürekli artacak sayç
 
-    public SupportSystem(List<Agent> agents, QueueManager queueManager, Reporter reporter, AssignmentStrategy assignmentStrategy){
+    public SupportSystem(List<Agent> agents, QueueManager queueManager, Reporter reporter,
+                         AssignmentStrategy assignmentStrategy, SimulationClock clock){
         this.agents = agents;
         this.queueManager = queueManager;
         this.reporter = reporter;
         this.assignmentStrategy = assignmentStrategy;
+        this.clock = clock;
         this.availablitySequence = 0;
-
-        Session session = new Session(queueManager, reporter);
+        this.session = new Session(queueManager, reporter, clock);
         this.contact = new Contact(session);
-        this.session = session;
 
         for(Agent agent : agents){
             if(agent.isAvailable()){
                 markAvailable(agent);
             }
         }
+    }
+
+    public SupportSystem(List<Agent> agents, QueueManager queueManager, Reporter reporter,
+                         AssignmentStrategy assignmentStrategy){
+        this(agents, queueManager, reporter, assignmentStrategy, new SimulationClock());
     }
 
     private void markAvailable(Agent agent){
@@ -56,30 +62,35 @@ public class SupportSystem {
         Contact.Conversation conversation = nextConversation.get();
 
         agent.assignConversation(conversation);
+        conversation.setAssignedAt(clock.now());
 
         reporter.reportDispatchAssign(conversation, agent);
         return DispatchResult.assigned(agent, conversation);
     }
 
     public void submitMessage(String contactId, String customerInfo, String content){
-        contact.receiveMessage(contactId, customerInfo, content);
-        dispatchNext();
+        Contact.Conversation conversation = contact.receiveMessage(contactId, customerInfo, content);
+        if(conversation.getAssignedAt() < 0){
+            dispatchNext();
+        }
     }
 
     public void completeJob(Agent agent){
         Contact.Conversation finished = agent.releaseConversation();
-        if(finished!=null){
-            session.finishConversation(finished.getId());
+        if(finished != null){
+            session.finishConversation(finished);
             reporter.reportJobCompleted(agent, finished.getId());
         }
-        markAvailable(agent);
+        if(agent.isAvailable()){
+            markAvailable(agent);
+        }
         dispatchNext();
     }
 
     public void endShift(Agent agent){
         Contact.Conversation inProgress = agent.goOffline();
         if(inProgress != null){
-            session.transferConversation(inProgress.getId());
+            session.transferConversation(inProgress);
             reporter.reportShiftEnded(agent, inProgress.getId());
         }
         else {
