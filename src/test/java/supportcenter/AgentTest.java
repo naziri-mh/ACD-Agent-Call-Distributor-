@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class AgentTest {
@@ -76,8 +75,6 @@ class AgentTest {
         assertTrue(agent.isBusy());
     }
 
-    @Disabled("TD-03: releaseConversation sets an offline agent to AVAILABLE")
-
     @Test
     void shouldStayOfflineWhenReleasingWhileOffline() {
         Agent offlineAgent = new Agent("A2", Agent.Status.OFFLINE);
@@ -85,5 +82,23 @@ class AgentTest {
         offlineAgent.releaseConversation();
 
         assertTrue(offlineAgent.isOffline());
+    }
+
+    @Test
+    void shouldCountAssignedAndCompletedSeparately() {
+        agent.assignConversation(conversation);
+        agent.releaseConversation();
+        agent.assignConversation(new Contact.Conversation("C2", "C2", "Customer C2"));
+        agent.goOffline();
+
+        assertEquals(2, agent.getAssignedCount());
+        assertEquals(1, agent.getCompletedCount());
+    }
+
+    @Test
+    void shouldNotCountCompletionWhenNothingWasAssigned() {
+        agent.releaseConversation();
+
+        assertEquals(0, agent.getCompletedCount());
     }
 }

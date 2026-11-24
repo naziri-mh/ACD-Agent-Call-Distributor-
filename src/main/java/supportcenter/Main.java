@@ -25,16 +25,20 @@ public class Main{
         agents.add(a6);
 
         // sistem
-        Reporter reporter = new Reporter();
+        ConsoleLogging.configure();
+        long delayMillis = Long.getLong("acd.delayMs", 0);
+        Reporter reporter = new Reporter(delayMillis);
+        SimulationClock clock = new SimulationClock();
         QueueManager queueManager = new QueueManager();
         AssignmentStrategy strategy = new FirstAvailableStrategy();
-        SupportSystem supportSystem = new SupportSystem(agents, queueManager, reporter, strategy);
+        SupportSystem supportSystem = new SupportSystem(agents, queueManager, reporter, strategy, clock);
         reporter.reportInitialStatus(agents);
 
         // senaryolar
         List<ScenarioStep> scenario = new ArrayList<>();
 
         scenario.add(ScenarioStep.messageArrival("C1", "Ayşe Yılmaz", "Şifremi unuttum"));
+        scenario.add(ScenarioStep.messageArrival("C1", "Ayşe Yılmaz", "Telefon numaram da değişti"));
         scenario.add(ScenarioStep.agentGoesOnline(a1));
         scenario.add(ScenarioStep.messageArrival("C2", "Mehmet Kaya", "Faturamı göremiyorum"));
         scenario.add(ScenarioStep.messageArrival("C3", "Elif Demir", "Hesabım kilitlendi"));
@@ -52,7 +56,8 @@ public class Main{
         scenario.add(ScenarioStep.jobCompletion(a3));
         scenario.add(ScenarioStep.jobCompletion(a4));
 
-        SimulationRunner runner = new SimulationRunner(supportSystem, scenario, reporter);
+        SimulationRunner runner = new SimulationRunner(supportSystem, scenario, reporter, clock,
+        SimulationRunner.DEFAULT_SECONDS_PER_STEP);
         runner.run();
 
         reporter.reportFinalSummary(agents);
