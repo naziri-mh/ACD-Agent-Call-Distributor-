@@ -9,14 +9,14 @@ public class Agent {
 
     private final String id;
     private Status status;
-    private int totalJobHandled;
+    private int assignedCount;
+    private int completedCount;
     private Contact.Conversation currentConversation;
     private long availableSince;                                         // fifio sırası için
 
     public Agent(String id, Status baslangicDurumu){
         this.id = id;
         this.status = baslangicDurumu;
-        this.totalJobHandled = 0;
         this.currentConversation = null;
         this.availableSince = -1;
     }
@@ -61,20 +61,33 @@ public class Agent {
         return currentConversation;
     }
 
-    public void assignConversation(Contact.Conversation conversation){   // müsait olan temsilci için
+    public void assignConversation(Contact.Conversation conversation){
         this.currentConversation = conversation;
         this.status = Status.BUSY;
-        this.totalJobHandled++;
+        this.assignedCount++;
+    }
+
+    public int getAssignedCount(){
+        return assignedCount;
+    }
+
+    public int getCompletedCount(){
+        return completedCount;
     }
 
     public int getTotalJobHandled(){
-        return totalJobHandled;
+        return assignedCount;
     }
 
-    public Contact.Conversation releaseConversation(){         // işi biten temsilcinin müsait durumu için
+    public Contact.Conversation releaseConversation(){
         Contact.Conversation released = currentConversation;
+        if (released != null) {
+            completedCount++;
+        }
         this.currentConversation = null;
-        this.status = Status.AVAILABLE;
+        if (status != Status.OFFLINE) {
+            this.status = Status.AVAILABLE;
+        }
         return released;
     }
 
