@@ -79,7 +79,7 @@ public class SupportSystem {
         Contact.Conversation finished = agent.releaseConversation();
         if(finished != null){
             session.finishConversation(finished);
-            reporter.reportJobCompleted(agent, finished.getId());
+            reporter.reportJobCompleted(agent, finished);
         }
         if(agent.isAvailable()){
             markAvailable(agent);
