@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Runs the same checks as the build (Checkstyle, compile, tests, coverage) before every commit.
+# Skip only in an emergency with: git commit --no-verify
+
+LOG_FILE="target/pre-commit.log"
+mkdir -p target
+
+echo "pre-commit: running mvn verify (Checkstyle, tests, coverage)..."
+
+if ! mvn -B verify > "$LOG_FILE" 2>&1; then
+    echo ""
+    echo "pre-commit: FAILED - commit cancelled."
+    grep -E "\[WARN\]|Rule violated|Tests run:.*(Failures: [1-9]|Errors: [1-9])|COMPILATION ERROR|\.java:\[" "$LOG_FILE" | head -20
+    echo ""
+    echo "Full log: $LOG_FILE"
+    exit 1
+fi
+
+echo "pre-commit: OK"
